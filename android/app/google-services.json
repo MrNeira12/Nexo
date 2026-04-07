@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "82073468410",
+    "project_id": "eduspotify-b41f6",
+    "storage_bucket": "eduspotify-b41f6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:82073468410:android:deef8dc527ac395ad47843",
+        "android_client_info": {
+          "package_name": "com.android.eduspotify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPJTRbBMi6aKaJMK_3rwSx3zBmuW_xOaM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:82073468410:android:b93b39eee0791c3bd47843",
+        "android_client_info": {
+          "package_name": "com.example.pruebas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPJTRbBMi6aKaJMK_3rwSx3zBmuW_xOaM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
