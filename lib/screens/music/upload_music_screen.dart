@@ -15,7 +15,7 @@ class UploadMusicScreen extends StatefulWidget {
 class _UploadMusicScreenState extends State<UploadMusicScreen> {
   final _titleController = TextEditingController();
   final _authorController = TextEditingController();
-  final _youtubeUrlController = TextEditingController(); // Controlador para YouTube
+  final _youtubeUrlController = TextEditingController(); // Controlador para YouTube en Nexo
   
   File? _audioFile;
   File? _coverImage;
@@ -64,9 +64,9 @@ class _UploadMusicScreenState extends State<UploadMusicScreen> {
     }
   }
 
-  // Función para subir los archivos a Firebase Storage y los datos a Firestore
+  // Función para subir los archivos a Firebase Storage y los datos a Firestore para Nexo
   Future<void> _upload() async {
-    // Validaciones básicas
+    // Validaciones básicas de campos
     if (_titleController.text.isEmpty || _authorController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Por favor, ingresa el título y el autor")),
@@ -94,7 +94,7 @@ class _UploadMusicScreenState extends State<UploadMusicScreen> {
       String? finalUrl;
       String? coverUrl;
 
-      // 1. Manejo del contenido (Archivo o YouTube)
+      // 1. Manejo del contenido (Archivo MP3 o link de YouTube)
       if (_isYouTube) {
         finalUrl = _youtubeUrlController.text.trim();
       } else {
@@ -112,7 +112,7 @@ class _UploadMusicScreenState extends State<UploadMusicScreen> {
         coverUrl = await imgRef.getDownloadURL();
       }
 
-      // 3. Guardar metadatos en Firestore
+      // 3. Guardar metadatos en la colección de música de Nexo
       await FirebaseFirestore.instance.collection('music').add({
         'title': _titleController.text.trim(),
         'author': _authorController.text.trim(),
@@ -125,7 +125,7 @@ class _UploadMusicScreenState extends State<UploadMusicScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("¡Contenido publicado exitosamente!")),
+          const SnackBar(content: Text("¡Contenido publicado exitosamente en Nexo!")),
         );
       }
     } catch (e) {
@@ -159,7 +159,7 @@ class _UploadMusicScreenState extends State<UploadMusicScreen> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            // Switch de tipo de contenido
+            // Switch de tipo de contenido para Nexo
             SegmentedButton<bool>(
               segments: const [
                 ButtonSegment(value: false, label: Text("Archivo"), icon: Icon(Icons.audiotrack_rounded)),
@@ -177,7 +177,7 @@ class _UploadMusicScreenState extends State<UploadMusicScreen> {
                 height: 180,
                 width: 180,
                 decoration: BoxDecoration(
-                  color: colors.surfaceVariant,
+                  color: colors.surfaceContainerHighest.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(color: colors.outline.withOpacity(0.3)),
                   image: _coverImage != null 
@@ -217,7 +217,7 @@ class _UploadMusicScreenState extends State<UploadMusicScreen> {
             ),
             const SizedBox(height: 25),
 
-            // Selector dinámico según el modo
+            // Selector dinámico según el modo seleccionado en Nexo
             if (_isYouTube)
               TextField(
                 controller: _youtubeUrlController,

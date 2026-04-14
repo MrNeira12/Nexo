@@ -1,1 +1,28 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"eduspotify-b41f6","appId":"1:82073468410:android:b93b39eee0791c3bd47843","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"eduspotify-b41f6","configurations":{"android":"1:82073468410:android:b93b39eee0791c3bd47843","ios":"1:82073468410:ios:8483aeacf8260a19d47843","macos":"1:82073468410:ios:8483aeacf8260a19d47843","web":"1:82073468410:web:f87f0018105dcd8fd47843","windows":"1:82073468410:web:17a8debdf7d7be34d47843"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "nexo-bcb44",
+          "appId": "1:768837262110:android:88fd3c7f9e771593f3470f",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "nexo-bcb44",
+          "configurations": {
+            "android": "1:768837262110:android:88fd3c7f9e771593f3470f",
+            "ios": "1:768837262110:ios:556cbbeb44493f7ef3470f",
+            "macos": "1:768837262110:ios:556cbbeb44493f7ef3470f",
+            "web": "1:768837262110:web:c93ecbc2b5e4c263f3470f",
+            "windows": "1:768837262110:web:307f41c1e2a15aa1f3470f"
+          }
+        }
+      }
+    }
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,12 +9,12 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 
-class EduShortsScreen extends StatefulWidget {
-  final bool isActive; // Controla si la pestaña está visible para pausar/reproducir
-  final Query? customQuery; // Permite pasar una consulta personalizada (ej: videos guardados)
-  final bool showBackButton; // Muestra un botón de volver si se abre como sub-pantalla
+class NexoShortsScreen extends StatefulWidget {
+  final bool isActive; 
+  final Query? customQuery; 
+  final bool showBackButton; 
   
-  const EduShortsScreen({
+  const NexoShortsScreen({
     super.key, 
     this.isActive = true, 
     this.customQuery,
@@ -21,21 +22,20 @@ class EduShortsScreen extends StatefulWidget {
   });
 
   @override
-  State<EduShortsScreen> createState() => _EduShortsScreenState();
+  State<NexoShortsScreen> createState() => _NexoShortsScreenState();
 }
 
-class _EduShortsScreenState extends State<EduShortsScreen> {
+class _NexoShortsScreenState extends State<NexoShortsScreen> {
   final PageController _pageController = PageController();
   int _focusedIndex = 0;
 
-  // Función para abrir la cámara/galería y subir un video
+  // Función de carga (Mantenida por lógica interna, pero UI removida de esta pantalla)
   Future<void> _uploadVideo() async {
     final picker = ImagePicker();
     final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
 
     if (video == null) return;
 
-    // Mostrar un diálogo de carga
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -44,19 +44,15 @@ class _EduShortsScreenState extends State<EduShortsScreen> {
 
     try {
       final user = FirebaseAuth.instance.currentUser;
-      
-      // Obtener el nombre real del usuario desde Firestore
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(user?.uid).get();
       final String realName = userDoc.data()?['name'] ?? user?.displayName ?? 'Usuario';
       
       final videoId = DateTime.now().millisecondsSinceEpoch.toString();
       
-      // 1. Subir video a Storage
       final ref = FirebaseStorage.instance.ref().child('shorts').child('$videoId.mp4');
       await ref.putFile(File(video.path));
       final url = await ref.getDownloadURL();
 
-      // 2. Guardar datos en Firestore
       await FirebaseFirestore.instance.collection('shorts').doc(videoId).set({
         'url': url,
         'authorName': realName,
@@ -66,13 +62,15 @@ class _EduShortsScreenState extends State<EduShortsScreen> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      if (mounted) Navigator.pop(context); // Cerrar cargando
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("¡Video subido con éxito!")));
+      if (mounted) Navigator.pop(context); 
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("¡Video subido con éxito a Nexo!"), behavior: SnackBarBehavior.floating));
     } catch (e) {
       if (mounted) Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al subir: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al subir: $e"), behavior: SnackBarBehavior.floating));
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -80,10 +78,7 @@ class _EduShortsScreenState extends State<EduShortsScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Feed de Videos en tiempo real
           StreamBuilder<QuerySnapshot>(
-            // Si hay una consulta personalizada (ej: de la carpeta guardados), la usamos.
-            // Si no, usamos el feed global por defecto.
             stream: widget.customQuery?.snapshots() ?? FirebaseFirestore.instance
                 .collection('shorts')
                 .orderBy('createdAt', descending: true)
@@ -117,31 +112,26 @@ class _EduShortsScreenState extends State<EduShortsScreen> {
 
               return PageView.builder(
                 scrollDirection: Axis.vertical,
+                physics: const AlwaysScrollableScrollPhysics(),
                 controller: _pageController,
                 onPageChanged: (index) {
                   setState(() {
-                    // Calculamos el índice real basado en el total de documentos
                     _focusedIndex = index % actualCount;
                   });
                 },
-                // Usamos un número muy grande para simular un loop infinito
                 itemCount: 10000, 
                 itemBuilder: (context, index) {
-                  // Mapeamos el índice del PageView al índice real de los datos
                   final int realIndex = index % actualCount;
-
                   final data = docs[realIndex].data() as Map<String, dynamic>?;
                   if (data == null) return const SizedBox.shrink();
                   
                   final id = docs[realIndex].id;
-                  // El video está activo si la pestaña está activa y coincide con el índice visual actual
                   final bool isVideoActive = widget.isActive && (_focusedIndex == realIndex);
                   
                   return VideoPost(
                     videoId: id, 
                     videoData: data, 
                     isActive: isVideoActive,
-                    // Añadimos el index a la ValueKey para evitar conflictos de estado en el loop
                     key: ValueKey("$id-$index"),
                   );
                 },
@@ -149,18 +139,6 @@ class _EduShortsScreenState extends State<EduShortsScreen> {
             },
           ),
           
-          // Botón de subir (Solo lo mostramos en el feed principal, no en guardados)
-          if (!widget.showBackButton)
-            Positioned(
-              top: 50,
-              right: 20,
-              child: IconButton(
-                icon: const Icon(Icons.add_a_photo, color: Colors.white, size: 28),
-                onPressed: _uploadVideo,
-              ),
-            ),
-
-          // Botón de volver (Solo si venimos de la carpeta de guardados)
           if (widget.showBackButton)
             Positioned(
               top: 50,
@@ -204,6 +182,7 @@ class _VideoPostState extends State<VideoPost> {
   bool _isLiked = false;
   bool _isSaved = false;
   bool _hasError = false;
+  bool _isSpeedUp = false;
   final user = FirebaseAuth.instance.currentUser;
 
   @override
@@ -217,7 +196,9 @@ class _VideoPostState extends State<VideoPost> {
   void _initializeController() {
     final String? url = widget.videoData['url'];
     if (url == null || url.isEmpty) {
-      setState(() => _hasError = true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _hasError = true);
+      });
       return;
     }
 
@@ -287,19 +268,21 @@ class _VideoPostState extends State<VideoPost> {
     if (_isSaved) {
       await ref.delete();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Eliminado de guardados")));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Eliminado de guardados"), behavior: SnackBarBehavior.floating));
       }
     } else {
       await ref.set(widget.videoData);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Guardado en tu perfil")));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Guardado en tu perfil de Nexo"), behavior: SnackBarBehavior.floating));
       }
     }
     setState(() => _isSaved = !_isSaved);
   }
 
+  // Lógica de pausa simple optimizada
   void _handleTap() {
     if (_controller == null || !_controller!.value.isInitialized) return;
+    
     setState(() {
       _controller!.value.isPlaying ? _controller?.pause() : _controller?.play();
     });
@@ -308,6 +291,11 @@ class _VideoPostState extends State<VideoPost> {
   @override
   Widget build(BuildContext context) {
     final String authorName = widget.videoData['authorName'] ?? 'Usuario';
+    final colors = Theme.of(context).colorScheme;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    
+    // Offset ajustado para no interferir con la barra de navegación moderna
+    final contentBottomOffset = 85 + bottomPadding;
 
     if (_hasError) {
       return const Center(child: Text("Error al cargar este video", style: TextStyle(color: Colors.white)));
@@ -316,9 +304,16 @@ class _VideoPostState extends State<VideoPost> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Reproductor de Video Full Screen
         GestureDetector(
           onTap: _handleTap,
+          onLongPressStart: (_) {
+            setState(() => _isSpeedUp = true);
+            _controller?.setPlaybackSpeed(2.0);
+          },
+          onLongPressEnd: (_) {
+            setState(() => _isSpeedUp = false);
+            _controller?.setPlaybackSpeed(1.0);
+          },
           behavior: HitTestBehavior.opaque,
           child: (_controller != null && _controller!.value.isInitialized)
               ? SizedBox.expand(
@@ -334,15 +329,44 @@ class _VideoPostState extends State<VideoPost> {
               : const Center(child: CircularProgressIndicator(color: Colors.white)),
         ),
 
-        // Icono de Pausa Moderno con Blur
+        // Indicador de 2x Velocidad
+        if (_isSpeedUp)
+          Positioned(
+            top: 100,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.fast_forward, color: Colors.white, size: 16),
+                        SizedBox(width: 8),
+                        Text("2X Velocidad", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
         if (_controller != null && !_controller!.value.isPlaying && _controller!.value.isInitialized)
           Center(
             child: ClipOval(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                 child: Container(
                   padding: const EdgeInsets.all(15),
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withOpacity(0.05),
                   child: const Icon(Icons.play_arrow_rounded, size: 50, color: Colors.white),
                 ),
               ),
@@ -362,63 +386,76 @@ class _VideoPostState extends State<VideoPost> {
           ),
         ),
 
-        // Info del Autor
+        // Textos del Autor
         Positioned(
-          bottom: 40,
+          bottom: contentBottomOffset,
           left: 20,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("@$authorName", 
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 8),
-              Text(widget.videoData['title'] ?? 'Lección Educativa', 
-                style: const TextStyle(color: Colors.white70, fontSize: 13)),
-            ],
+          right: 80, 
+          child: RepaintBoundary(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("@$authorName", 
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 8),
+                Text(widget.videoData['title'] ?? 'Lección Educativa', 
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
 
         // Botones Laterales
         Positioned(
           right: 15,
-          bottom: 100,
-          child: Column(
-            children: [
-              // LIKE BUTTON
-              _sideButton(
-                icon: _isLiked ? Icons.favorite : Icons.favorite_border,
-                label: "${(widget.videoData['likes'] as List?)?.length ?? 0}",
-                iconColor: _isLiked ? Colors.red : Colors.white,
-                onTap: _toggleLike,
-              ),
-              // COMMENT BUTTON
-              _sideButton(
-                icon: Icons.comment_rounded,
-                label: "Comentarios",
-                onTap: () => _showComments(context),
-              ),
-              // SAVE BUTTON (Toggle con icono dinámico)
-              _sideButton(
-                icon: _isSaved ? Icons.bookmark : Icons.bookmark_border,
-                label: _isSaved ? "Guardado" : "Guardar",
-                onTap: _toggleSave,
-              ),
-              // SHARE BUTTON
-              _sideButton(
-                icon: Icons.share,
-                label: "Compartir",
-                onTap: () {
-                  Share.share("¡Mira este EduShort! ${widget.videoData['url']}");
-                },
-              ),
-            ],
+          bottom: contentBottomOffset - 10,
+          child: RepaintBoundary(
+            child: Column(
+              children: [
+                _sideButton(
+                  icon: _isLiked ? Icons.favorite : Icons.favorite_border,
+                  label: "${(widget.videoData['likes'] as List?)?.length ?? 0}",
+                  iconColor: _isLiked ? colors.primary : Colors.white,
+                  onTap: _toggleLike,
+                ),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('shorts')
+                      .doc(widget.videoId)
+                      .collection('comments')
+                      .snapshots(),
+                  builder: (context, snap) {
+                    final count = snap.hasData ? snap.data!.docs.length : 0;
+                    return _sideButton(
+                      icon: Icons.comment_rounded,
+                      label: "$count",
+                      onTap: () => _showComments(context),
+                    );
+                  }
+                ),
+                _sideButton(
+                  icon: _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                  label: _isSaved ? "Guardado" : "Guardar",
+                  onTap: _toggleSave,
+                ),
+                _sideButton(
+                  icon: Icons.share,
+                  label: "Compartir",
+                  onTap: () {
+                    Share.share("¡Mira este Nexo Short! ${widget.videoData['url']}");
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  // Widget de botón lateral con efecto Glassmorphism (Blur + Transparencia)
   Widget _sideButton({
     required IconData icon, 
     required String label, 
@@ -432,17 +469,25 @@ class _VideoPostState extends State<VideoPost> {
           onTap: onTap,
           child: ClipOval(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
               child: Container(
                 padding: const EdgeInsets.all(10),
-                color: Colors.white.withOpacity(0.15),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                  // Línea delgada para definir mejor el botón sobre el video
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.15),
+                    width: 0.5,
+                  ),
+                ),
                 child: Icon(icon, color: iconColor ?? color, size: 24),
               ),
             ),
           ),
         ),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w500)),
+        Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
       ],
     );
@@ -463,7 +508,7 @@ class _VideoPostState extends State<VideoPost> {
             padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
             child: Container(
               padding: const EdgeInsets.all(20),
-              height: MediaQuery.of(context).size.height * 0.5,
+              height: MediaQuery.of(context).size.height * 0.55,
               child: Column(
                 children: [
                   Container(
@@ -473,6 +518,7 @@ class _VideoPostState extends State<VideoPost> {
                     decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(10)),
                   ),
                   const Text("Comentarios", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  const SizedBox(height: 10),
                   
                   Expanded(
                     child: StreamBuilder<QuerySnapshot>(
@@ -491,6 +537,7 @@ class _VideoPostState extends State<VideoPost> {
                         }
                         
                         return ListView.builder(
+                          physics: const BouncingScrollPhysics(),
                           itemCount: snapshot.data!.docs.length,
                           itemBuilder: (context, index) {
                             final commentData = snapshot.data!.docs[index].data() as Map<String, dynamic>;
@@ -511,46 +558,49 @@ class _VideoPostState extends State<VideoPost> {
                     ),
                   ),
                   
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: commentController,
-                          decoration: InputDecoration(
-                            hintText: "Escribe un comentario...",
-                            hintStyle: const TextStyle(fontSize: 14),
-                            border: const OutlineInputBorder(),
-                            fillColor: theme.colorScheme.surfaceContainerHighest,
-                            filled: true,
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: commentController,
+                            decoration: InputDecoration(
+                              hintText: "Escribe un comentario...",
+                              hintStyle: const TextStyle(fontSize: 14),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              fillColor: theme.colorScheme.surfaceContainerHighest,
+                              filled: true,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      IconButton(
-                        icon: const Icon(Icons.send),
-                        color: theme.colorScheme.primary,
-                        onPressed: () async {
-                          if (commentController.text.isNotEmpty) {
-                            final String text = commentController.text.trim();
-                            commentController.clear();
-                            
-                            final userDoc = await FirebaseFirestore.instance.collection('users').doc(user?.uid).get();
-                            final String currentName = userDoc.data()?['name'] ?? user?.displayName ?? 'Anónimo';
-                            
-                            await FirebaseFirestore.instance
-                                .collection('shorts')
-                                .doc(widget.videoId)
-                                .collection('comments')
-                                .add({
-                              'userId': user?.uid,
-                              'userName': currentName,
-                              'text': text,
-                              'createdAt': FieldValue.serverTimestamp(),
-                            });
-                          }
-                        },
-                      )
-                    ],
+                        const SizedBox(width: 10),
+                        IconButton(
+                          icon: const Icon(Icons.send),
+                          color: theme.colorScheme.primary,
+                          onPressed: () async {
+                            if (commentController.text.isNotEmpty) {
+                              final String text = commentController.text.trim();
+                              commentController.clear();
+                              
+                              final userDoc = await FirebaseFirestore.instance.collection('users').doc(user?.uid).get();
+                              final String currentName = userDoc.data()?['name'] ?? user?.displayName ?? 'Anónimo';
+                              
+                              await FirebaseFirestore.instance
+                                  .collection('shorts')
+                                  .doc(widget.videoId)
+                                  .collection('comments')
+                                  .add({
+                                'userId': user?.uid,
+                                'userName': currentName,
+                                'text': text,
+                                'createdAt': FieldValue.serverTimestamp(),
+                              });
+                            }
+                          },
+                        )
+                      ],
+                    ),
                   ),
                 ],
               ),

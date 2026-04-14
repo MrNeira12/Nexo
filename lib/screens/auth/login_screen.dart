@@ -27,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    // Verificación básica de campos vacíos
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       _mostrarMensaje("Por favor, llena todos los campos.");
       return;
@@ -36,16 +35,13 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = true);
 
     try {
-      // Intento de inicio de sesión con Firebase
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      // Al tener éxito, el AuthWrapper en main.dart detectará el cambio automáticamente
     } on FirebaseAuthException catch (e) {
       String mensajeError = "Ocurrió un error inesperado.";
       
-      // Manejo específico de errores comunes de Firebase
       switch (e.code) {
         case 'user-not-found': 
           mensajeError = "Este correo no está registrado."; 
@@ -71,86 +67,95 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.all(30),
-        decoration: BoxDecoration(
-          // Degradado que combina con el estilo de la app
-          gradient: LinearGradient(
-            begin: Alignment.topCenter, 
-            end: Alignment.bottomCenter,
-            colors: [colors.primaryContainer.withOpacity(0.3), colors.surface],
+      backgroundColor: isDark ? Colors.black : colors.surface,
+      // OPTIMIZACIÓN 120HZ: RepaintBoundary para aislar el degradado de fondo
+      body: RepaintBoundary(
+        child: Container(
+          padding: const EdgeInsets.all(30),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter, 
+              end: Alignment.bottomCenter,
+              colors: [
+                colors.primaryContainer.withOpacity(isDark ? 0.15 : 0.3), 
+                isDark ? Colors.black : colors.surface
+              ],
+            ),
           ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Icono representativo de la academia
-                Icon(Icons.school_rounded, size: 80, color: colors.primary),
-                const SizedBox(height: 20),
-                const Text(
-                  "EduSpotify", 
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)
-                ),
-                const Text("Continúa tu aprendizaje"),
-                const SizedBox(height: 40),
-
-                // Campo de Correo
-                TextField(
-                  controller: _emailController, 
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: "Email", 
-                    prefixIcon: Icon(Icons.email_outlined), 
-                    border: OutlineInputBorder()
+          child: Center(
+            child: SingleChildScrollView(
+              // OPTIMIZACIÓN: Se restaura la física nativa de Android (Stretch/Glow)
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.school_rounded, size: 80, color: Colors.blue),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Nexo", 
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)
                   ),
-                ),
-                const SizedBox(height: 15),
+                  const Text("Continúa tu aprendizaje"),
+                  const SizedBox(height: 40),
 
-                // Campo de Contraseña
-                TextField(
-                  controller: _passwordController, 
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: "Contraseña", 
-                    prefixIcon: Icon(Icons.lock_outline), 
-                    border: OutlineInputBorder()
+                  TextField(
+                    controller: _emailController, 
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: "Email", 
+                      prefixIcon: Icon(Icons.email_outlined), 
+                      border: OutlineInputBorder()
+                    ),
                   ),
-                ),
-                const SizedBox(height: 30),
+                  const SizedBox(height: 15),
 
-                // Botón de Entrar con estado de carga
-                if (isLoading) 
-                  const CircularProgressIndicator()
-                else 
+                  TextField(
+                    controller: _passwordController, 
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: "Contraseña", 
+                      prefixIcon: Icon(Icons.lock_outline), 
+                      border: OutlineInputBorder()
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // Botón de Entrar con optimización de layout
                   SizedBox(
                     width: double.infinity, 
                     height: 55,
                     child: ElevatedButton(
-                      onPressed: _login, 
+                      onPressed: isLoading ? null : _login, 
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colors.primary, 
                         foregroundColor: Colors.white,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
                       ),
-                      child: const Text(
-                        "Entrar", 
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
-                      )
+                      child: isLoading 
+                        ? const SizedBox(
+                            height: 20, 
+                            width: 20, 
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
+                          )
+                        : const Text(
+                            "Entrar", 
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                          )
                     ),
                   ),
 
-                const SizedBox(height: 15),
+                  const SizedBox(height: 15),
 
-                // Botón para alternar a la pantalla de Registro
-                TextButton(
-                  onPressed: widget.onToggle, 
-                  child: const Text("¿No tienes cuenta? Regístrate aquí")
-                ),
-              ],
+                  TextButton(
+                    onPressed: widget.onToggle, 
+                    child: const Text("¿No tienes cuenta? Regístrate aquí")
+                  ),
+                ],
+              ),
             ),
           ),
         ),

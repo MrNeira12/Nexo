@@ -10,8 +10,8 @@ class InterestsScreen extends StatefulWidget {
 }
 
 class _InterestsScreenState extends State<InterestsScreen> {
-  // Lista de categorías educativas con sus respectivos iconos y colores
-  final List<Map<String, dynamic>> categories = [
+  // OPTIMIZACIÓN 120HZ: Lista estática inmutable para evitar recreación de objetos en el build
+  static const List<Map<String, dynamic>> _categories = [
     {'name': 'Ciencia', 'icon': Icons.science, 'color': Colors.blue},
     {'name': 'Historia', 'icon': Icons.history_edu, 'color': Colors.orange},
     {'name': 'Matemáticas', 'icon': Icons.functions, 'color': Colors.green},
@@ -25,7 +25,6 @@ class _InterestsScreenState extends State<InterestsScreen> {
   final List<String> selectedInterests = [];
   bool isSaving = false;
 
-  // Función para alternar la selección de un interés
   void toggleInterest(String name) {
     setState(() {
       if (selectedInterests.contains(name)) {
@@ -36,11 +35,13 @@ class _InterestsScreenState extends State<InterestsScreen> {
     });
   }
 
-  // Función para guardar los intereses en Firestore y permitir el acceso a la app
   Future<void> saveInterests() async {
     if (selectedInterests.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Selecciona al menos un interés para continuar")),
+        const SnackBar(
+          content: Text("Selecciona al menos un interés para continuar"),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -50,18 +51,16 @@ class _InterestsScreenState extends State<InterestsScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Actualizamos el documento del usuario con sus nuevos intereses
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'interests': selectedInterests,
         }, SetOptions(merge: true));
-        
-        // No es necesario navegar manualmente, el AuthWrapper en main.dart 
-        // detectará el cambio en el documento y mostrará la MainNavigation.
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error al guardar: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error al guardar: $e")),
+        );
+      }
     } finally {
       if (mounted) setState(() => isSaving = false);
     }
@@ -89,69 +88,82 @@ class _InterestsScreenState extends State<InterestsScreen> {
               ),
               const SizedBox(height: 30),
               
-              // Cuadrícula de intereses
+              // OPTIMIZACIÓN 120HZ: RepaintBoundary para aislar el renderizado del GridView
               Expanded(
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 15,
-                    mainAxisSpacing: 15,
-                    childAspectRatio: 1.2,
-                  ),
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final cat = categories[index];
-                    final isSelected = selectedInterests.contains(cat['name']);
-                    
-                    return GestureDetector(
-                      onTap: () => toggleInterest(cat['name']),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        decoration: BoxDecoration(
-                          color: isSelected 
-                              ? cat['color'] 
-                              : colors.surfaceContainerHighest.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isSelected ? cat['color'] : Colors.transparent,
-                            width: 2,
+                child: RepaintBoundary(
+                  child: GridView.builder(
+                    // OPTIMIZACIÓN: Física nativa de Android para un comportamiento profesional
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 15,
+                      mainAxisSpacing: 15,
+                      childAspectRatio: 1.2,
+                    ),
+                    itemCount: _categories.length,
+                    itemBuilder: (context, index) {
+                      final cat = _categories[index];
+                      final isSelected = selectedInterests.contains(cat['name']);
+                      
+                      return GestureDetector(
+                        onTap: () => toggleInterest(cat['name']),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic, 
+                          decoration: BoxDecoration(
+                            color: isSelected 
+                                ? cat['color'] 
+                                : colors.surfaceContainerHighest.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected ? cat['color'] : Colors.transparent,
+                              width: 2,
+                            ),
+                            boxShadow: isSelected ? [
+                              BoxShadow(
+                                color: (cat['color'] as Color).withOpacity(0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              )
+                            ] : null,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                cat['icon'],
+                                size: 40,
+                                color: isSelected ? Colors.white : cat['color'],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                cat['name'],
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected ? Colors.white : colors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              cat['icon'],
-                              size: 40,
-                              color: isSelected ? Colors.white : cat['color'],
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              cat['name'],
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: isSelected ? Colors.white : colors.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
               
               const SizedBox(height: 20),
               
-              // Botón de Continuar
               SizedBox(
                 width: double.infinity,
                 height: 60,
                 child: ElevatedButton(
-                  onPressed: selectedInterests.isEmpty || isSaving ? null : saveInterests,
+                  onPressed: (selectedInterests.isEmpty || isSaving) ? null : saveInterests,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colors.primary,
                     foregroundColor: Colors.white,
+                    disabledBackgroundColor: colors.surfaceContainerHighest,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),

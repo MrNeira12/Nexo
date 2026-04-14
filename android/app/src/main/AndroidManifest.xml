@@ -1,21 +1,43 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permisos para que la app pueda acceder a internet y verificar el estado de red -->
+    <!-- Permisos para acceso a red y estado -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     
-    <!-- Permite que el audio siga sonando aunque la pantalla se apague -->
+    <!-- Evita que el audio se corte si el sistema entra en modo ahorro -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- REQUERIDO: Permisos para Foreground Service y Control de Medios Nativo -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+    <!-- OPTIMIZACIÓN 120HZ: Se activa hardwareAccelerated y se permite un heap de memoria mayor -->
     <application
         android:label="pruebas"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"
-        android:hardwareAccelerated="true"> <!-- Mejora el rendimiento de video/audio -->
+        android:hardwareAccelerated="true"
+        android:largeHeap="true"> 
         
-        <!-- Necesario para resolver conflictos con Google Play Services (GMS) -->
+        <!-- Servicio de Audio para que el sistema (HyperOS/Samsung) detecte la MediaSession -->
+        <service android:name="com.ryanheise.audioservice.AudioService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </service>
+
+        <!-- Receptor de botones físicos y de auriculares -->
+        <receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
@@ -24,13 +46,12 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:taskAffinity=""
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
             
-            <!-- Tema inicial mientras carga la interfaz de Flutter -->
+            <!-- Optimización de renderizado inicial -->
             <meta-data
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
@@ -42,34 +63,27 @@
             </intent-filter>
         </activity>
 
-        <!-- No eliminar esta meta-data, es necesaria para el registro de plugins -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
 
-    <!-- Configuración crítica para Android 11+ (API 30+) -->
-    <!-- Esto soluciona de forma definitiva el error 'SecurityException' y visibilidad de servicios -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
         
-        <!-- Permite la comunicación con el reproductor de YouTube y navegadores -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <category android:name="android.intent.category.BROWSABLE" />
             <data android:scheme="https" />
         </intent>
 
-        <!-- INTENTO ESPECÍFICO DEL SERVICIO DE YOUTUBE -->
-        <!-- Esta es la pieza que suele faltar para que el broker de Google reconozca la llamada -->
         <intent>
             <action android:name="com.google.android.youtube.api.service.START" />
         </intent>
 
-        <!-- Visibilidad específica para los paquetes involucrados -->
         <package android:name="com.google.android.youtube" />
         <package android:name="com.google.android.gms" />
         <package android:name="com.google.android.apps.youtube.music" />

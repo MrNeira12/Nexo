@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-// Añadimos 'type' para clasificar el contenido
+/// Modelo de datos optimizado para alto rendimiento (120Hz).
+/// La inmutabilidad garantiza que Flutter pueda cachear instancias de forma eficiente.
+@immutable
 class ContentItem {
   final String id;
   final String title;
@@ -10,7 +12,8 @@ class ContentItem {
   final Color color;
   final IconData icon;
 
-  ContentItem({
+  // Constructor const: Crucial para optimizar el árbol de widgets
+  const ContentItem({
     required this.id,
     required this.title,
     required this.author, 
@@ -20,7 +23,29 @@ class ContentItem {
     this.icon = Icons.headphones,
   });
 
-  // Función para convertir los datos de Firebase a este molde
+  /// Crea una copia del item con algunos campos modificados.
+  /// Útil para actualizaciones de estado rápidas sin mutar el objeto original.
+  ContentItem copyWith({
+    String? id,
+    String? title,
+    String? author,
+    String? category,
+    String? type,
+    Color? color,
+    IconData? icon,
+  }) {
+    return ContentItem(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      author: author ?? this.author,
+      category: category ?? this.category,
+      type: type ?? this.type,
+      color: color ?? this.color,
+      icon: icon ?? this.icon,
+    );
+  }
+
+  /// Función para convertir los datos de Firebase al modelo de Nexo.
   factory ContentItem.fromFirestore(Map<String, dynamic> data, String id) {
     return ContentItem(
       id: id,
@@ -28,11 +53,12 @@ class ContentItem {
       author: data['author'] ?? '',
       category: data['category'] ?? '',
       type: data['type'] ?? 'audiolibro',
-      color: Colors.blue, // Podrías guardar el color en Firebase también
+      color: Colors.blue, // Se puede expandir para leer colores desde DB
       icon: _getIconByType(data['type']),
     );
   }
 
+  /// Helper estático optimizado para asignar iconos por tipo de contenido.
   static IconData _getIconByType(String? type) {
     switch (type) {
       case 'video': return Icons.play_circle;
@@ -42,4 +68,29 @@ class ContentItem {
       default: return Icons.headphones;
     }
   }
+
+  // --- OPTIMIZACIÓN DE COMPARACIÓN ---
+  // Estos métodos permiten que Flutter sepa si el contenido es idéntico 
+  // y evitar re-dibujar la tarjeta en pantallas de 120Hz.
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ContentItem &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          title == other.title &&
+          author == other.author &&
+          category == other.category &&
+          type == other.type &&
+          color == other.color;
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      title.hashCode ^
+      author.hashCode ^
+      category.hashCode ^
+      type.hashCode ^
+      color.hashCode;
 }

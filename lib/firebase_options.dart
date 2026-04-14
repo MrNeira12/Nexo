@@ -41,48 +41,49 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyC8b_Fv4YU2WMLwa3Vh801InT7RZkO2wIc',
-    appId: '1:82073468410:web:f87f0018105dcd8fd47843',
-    messagingSenderId: '82073468410',
-    projectId: 'eduspotify-b41f6',
-    authDomain: 'eduspotify-b41f6.firebaseapp.com',
-    storageBucket: 'eduspotify-b41f6.firebasestorage.app',
-    measurementId: 'G-2VSMT0ZMMF',
+    apiKey: 'AIzaSyCHpX4A61ne77k54w_Y1QvTIIodHBZZ424',
+    appId: '1:768837262110:web:c93ecbc2b5e4c263f3470f',
+    messagingSenderId: '768837262110',
+    projectId: 'nexo-bcb44',
+    authDomain: 'nexo-bcb44.firebaseapp.com',
+    storageBucket: 'nexo-bcb44.firebasestorage.app',
+    measurementId: 'G-C7RPYJHSGV',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAPJTRbBMi6aKaJMK_3rwSx3zBmuW_xOaM',
-    appId: '1:82073468410:android:b93b39eee0791c3bd47843',
-    messagingSenderId: '82073468410',
-    projectId: 'eduspotify-b41f6',
-    storageBucket: 'eduspotify-b41f6.firebasestorage.app',
+    apiKey: 'AIzaSyBwatZGT8caLkcMFm27RCi9tyA6GcFxYyI',
+    appId: '1:768837262110:android:88fd3c7f9e771593f3470f',
+    messagingSenderId: '768837262110',
+    projectId: 'nexo-bcb44',
+    storageBucket: 'nexo-bcb44.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBiPeT2PstrbaaNBhnUCWFz1X3WJoB_ir4',
-    appId: '1:82073468410:ios:8483aeacf8260a19d47843',
-    messagingSenderId: '82073468410',
-    projectId: 'eduspotify-b41f6',
-    storageBucket: 'eduspotify-b41f6.firebasestorage.app',
+    apiKey: 'AIzaSyB4NR1GraSCpnuVGI557kizS1pKx9h8ebo',
+    appId: '1:768837262110:ios:556cbbeb44493f7ef3470f',
+    messagingSenderId: '768837262110',
+    projectId: 'nexo-bcb44',
+    storageBucket: 'nexo-bcb44.firebasestorage.app',
     iosBundleId: 'com.example.pruebas',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBiPeT2PstrbaaNBhnUCWFz1X3WJoB_ir4',
-    appId: '1:82073468410:ios:8483aeacf8260a19d47843',
-    messagingSenderId: '82073468410',
-    projectId: 'eduspotify-b41f6',
-    storageBucket: 'eduspotify-b41f6.firebasestorage.app',
+    apiKey: 'AIzaSyB4NR1GraSCpnuVGI557kizS1pKx9h8ebo',
+    appId: '1:768837262110:ios:556cbbeb44493f7ef3470f',
+    messagingSenderId: '768837262110',
+    projectId: 'nexo-bcb44',
+    storageBucket: 'nexo-bcb44.firebasestorage.app',
     iosBundleId: 'com.example.pruebas',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyC8b_Fv4YU2WMLwa3Vh801InT7RZkO2wIc',
-    appId: '1:82073468410:web:17a8debdf7d7be34d47843',
-    messagingSenderId: '82073468410',
-    projectId: 'eduspotify-b41f6',
-    authDomain: 'eduspotify-b41f6.firebaseapp.com',
-    storageBucket: 'eduspotify-b41f6.firebasestorage.app',
-    measurementId: 'G-S71HJTEK5P',
+    apiKey: 'AIzaSyCHpX4A61ne77k54w_Y1QvTIIodHBZZ424',
+    appId: '1:768837262110:web:307f41c1e2a15aa1f3470f',
+    messagingSenderId: '768837262110',
+    projectId: 'nexo-bcb44',
+    authDomain: 'nexo-bcb44.firebaseapp.com',
+    storageBucket: 'nexo-bcb44.firebasestorage.app',
+    measurementId: 'G-7GKKY2N034',
   );
+
 }
