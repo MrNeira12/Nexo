@@ -29,7 +29,7 @@ State Management: StatefulWidgets with optimized lifecycle handling (dispose/ini
 a
 📂 Project Structure
 🔧 How to Run
-Clone this repository: git clone [https://github.com/tu-usuario/pruebas.git](https://github.com/MrNeira12/EduSpotify)
+Clone this repository: git clone [https://github.com/tu-usuario/pruebas.git](https://github.com/MrNeira12/Nexo)
 
 Install dependencies: flutter pub get
 
