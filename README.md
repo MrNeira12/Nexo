@@ -1,5 +1,5 @@
-# EduSpotify
-🎵 EduSpotify: Academic Music & Media Player
+# Nexo
+🎵 Nexo: Academic Music & Media Player
 A specialized Flutter-based multimedia application for students and educators.
 
 📝 Description
